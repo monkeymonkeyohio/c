@@ -5,6 +5,53 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="./style.css">
+    <!-- Additional head modules -->
+<script>
+  // 1. Provide a dummy GameMonetize SDK object
+  window.sdk = {
+    showBanner: function () {
+      console.log("[AdBlocker] Ad skipped");
+      setTimeout(function () {
+        if (window.SDK_OPTIONS && typeof window.SDK_OPTIONS.onEvent === "function") {
+          window.SDK_OPTIONS.onEvent({ name: "SDK_GAME_START" });
+        }
+        if (typeof FocusGame === "function") {
+          FocusGame();
+        }
+      }, 50);
+    },
+    preloadAd: function () {}
+  };
+
+  // 2. Intercept and block PluginYG2 from loading ://gamemonetize.com
+  (function () {
+    const origAppendChild = Element.prototype.appendChild;
+    const origInsertBefore = Element.prototype.insertBefore;
+
+    function blockGameMonetizeScript(node) {
+      if (node && node.tagName === "SCRIPT" && node.src && node.src.includes("gamemonetize")) {
+        console.log("[AdBlocker] Blocked external SDK:", node.src);
+        const onload = node.onload;
+        node.removeAttribute("src");
+        if (typeof onload === "function") {
+          setTimeout(onload, 10);
+        }
+        return true;
+      }
+      return false;
+    }
+
+    Element.prototype.appendChild = function (node) {
+      if (blockGameMonetizeScript(node)) return node;
+      return origAppendChild.call(this, node);
+    };
+
+    Element.prototype.insertBefore = function (node, refNode) {
+      if (blockGameMonetizeScript(node)) return node;
+      return origInsertBefore.call(this, node, refNode);
+    };
+  })();
+</script>
 
     <style>
         canvas:focus {
